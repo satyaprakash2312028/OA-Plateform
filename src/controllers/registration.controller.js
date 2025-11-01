@@ -47,6 +47,52 @@ const register = async(req, res) => {
     }
 };
 
-module.exports = {register};
+
+const getSelectedTeams = async (req, res) => {
+    try {
+        const { assessmentId } = req.body; // Or req.params if using URL parameters
+        if (!assessmentId) return res.status(400).json({ message: "Assessment ID is required" });
+
+        // Step 1: Fetch top scores, selecting only team ID and score
+        const topScores = await TeamScore.find({ assessment: assessmentId })
+            .sort({ score: -1 }) // Sort descending by score
+            .limit(100)          // Limit to top 100
+            .select("score team") // Select only needed fields
+            .lean();             // Use lean() for performance
+
+        if (!topScores || topScores.length === 0) {
+            return res.status(200).json({ selectedTeams: [] }); // Return empty if no scores found
+        }
+
+        // Step 2: Extract unique team IDs
+        const teamIds = topScores.map(score => score.team);
+
+        // Step 3: Fetch all relevant team details in ONE query
+        const teams = await Team.find({ _id: { $in: teamIds } })
+            .select("name") // Select only the name
+            .lean();
+
+        // Step 4: Create a lookup map for team names { teamId: teamName }
+        const teamNameMap = teams.reduce((map, team) => {
+            map[team._id.toString()] = team.name;
+            return map;
+        }, {});
+
+        // Step 5: Combine scores with team names
+        const selectedTeamsWithNames = topScores.map(score => ({
+            teamName: teamNameMap[score.team.toString()] || 'Unknown Team', // Handle case where team might be deleted
+            score: score.score,
+            // Include teamId if needed by frontend:
+            // teamId: score.team.toString() 
+        }));
+
+        res.status(200).json({ selectedTeams: selectedTeamsWithNames }); // Corrected key to match original code
+
+    } catch (error) {
+        console.log("Error in getSelectedTeams controller.", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+module.exports = {register, getSelectedTeams};
 
 

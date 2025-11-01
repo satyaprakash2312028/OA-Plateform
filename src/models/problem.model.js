@@ -11,13 +11,13 @@ const problemSchema = new Schema(
             type: String,
             required: true,
         },
-        timelimit: {
+        timeLimit: {
             type: Number,
             required: true,
             min: [0.25],
             max: [12]
         },
-        memorylimit: {
+        memoryLimit: {
             type: Number,
             required: true,
             min: [64],

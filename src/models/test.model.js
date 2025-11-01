@@ -11,25 +11,11 @@ const testSchema = new Schema({
   },
 
   // Location of the input file in object storage (e.g., R2 bucket key)
-  inputPath: {
+  path: {
     type: String,
-    required: [true, 'Input file path is required'],
+    required: [true, 'file path is required'],
     trim: true
   },
-
-  // Location of the expected output file in object storage
-  outputPath: {
-    type: String,
-    required: [true, 'Output file path is required'],
-    trim: true
-  },
-
-  // Flag to mark if this is a sample test case (visible to users)
-  isSample: {
-    type: Boolean,
-    default: false, // Default to false (hidden test case)
-    required: true
-  }
 
 }, { timestamps: true }); // Adds createdAt and updatedAt fields automatically
 

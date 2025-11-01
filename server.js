@@ -3,6 +3,12 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const {app, server} = require('./src/lib/socket.js');
+const { connectDB } = require('./src/lib/db.js');
+const { connectQueue } = require('./src/lib/queue.js');
+const { router: authRoutes } = require('./src/routes/auth.routes.js');
+const { router: problemRoutes } = require('./src/routes/problem.routes.js');
+const { router: internalRoutes } = require('./src/routes/internal.routes.js');
+// ... create and import other routes (registration, etc.)
 dotenv.config();
 const PORT = process.env.PORT;
 app.use(express.json({limit: "50mb"}))
@@ -12,9 +18,15 @@ app.use(cors({
     origin: "http://localhost:5173",
     credentials: true
 }));
+// --- ADD THESE LINES ---
+app.use("/api/auth", authRoutes);
+app.use("/api/problem", problemRoutes);
+app.use("/internal", internalRoutes);
 app.get('/', (req, res) => {
   res.send('Here.... from the App Backend from Satya...');
 });
 server.listen(PORT, () => {
   console.log(`Backend server listening on ${PORT} port...`);
+  connectDB();
+  connectQueue();
 });

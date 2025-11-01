@@ -5,7 +5,8 @@ const {Submission} = require("../models/submission.model.js");
 const {Registration} = require("../models/registration.model.js");
 const { Assessment } = require("../models/assessment.model.js");
 const {TeamScore} = require("../models/teamScore.model.js");
-
+const {Team} = require("../models/team.model.js");
+const {sendSubmissionToQueue} = require("../lib/queueManager.js");
 
 
 const submitProblem = async(req, res) => {
@@ -40,6 +41,7 @@ const submitProblem = async(req, res) => {
             });
             if(newSubmission) await newSubmission.save();
             else return res.status(500).json({message: "Could not create submission"});
+            await sendSubmissionToQueue(newSubmission);
             return  res.status(201).json({message: "Submission received", submissionId: newSubmission._id});
         }else{
             if(problem.isPrivate){
@@ -54,7 +56,7 @@ const submitProblem = async(req, res) => {
             });
             if(submission) await submission.save();
             else return res.status(500).json({message: "Could not create submission"});
-            
+            await sendSubmissionToQueue(submission);
             res.status(201).json({message: "Submission received", submissionId: submission._id});
         }
     }catch(error){
@@ -76,51 +78,7 @@ const submitProblem = async(req, res) => {
 // 'Internal Error' // Error within the judge system itself
 
 
-const getSelectedTeams = async (req, res) => {
-    try {
-        const { assessmentId } = req.body; // Or req.params if using URL parameters
-        if (!assessmentId) return res.status(400).json({ message: "Assessment ID is required" });
 
-        // Step 1: Fetch top scores, selecting only team ID and score
-        const topScores = await TeamScore.find({ assessment: assessmentId })
-            .sort({ score: -1 }) // Sort descending by score
-            .limit(100)          // Limit to top 100
-            .select("score team") // Select only needed fields
-            .lean();             // Use lean() for performance
-
-        if (!topScores || topScores.length === 0) {
-            return res.status(200).json({ selectedTeams: [] }); // Return empty if no scores found
-        }
-
-        // Step 2: Extract unique team IDs
-        const teamIds = topScores.map(score => score.team);
-
-        // Step 3: Fetch all relevant team details in ONE query
-        const teams = await Team.find({ _id: { $in: teamIds } })
-            .select("name") // Select only the name
-            .lean();
-
-        // Step 4: Create a lookup map for team names { teamId: teamName }
-        const teamNameMap = teams.reduce((map, team) => {
-            map[team._id.toString()] = team.name;
-            return map;
-        }, {});
-
-        // Step 5: Combine scores with team names
-        const selectedTeamsWithNames = topScores.map(score => ({
-            teamName: teamNameMap[score.team.toString()] || 'Unknown Team', // Handle case where team might be deleted
-            score: score.score,
-            // Include teamId if needed by frontend:
-            // teamId: score.team.toString() 
-        }));
-
-        res.status(200).json({ selectedTeams: selectedTeamsWithNames }); // Corrected key to match original code
-
-    } catch (error) {
-        console.log("Error in getSelectedTeams controller.", error);
-        return res.status(500).json({ message: "Internal Server Error" });
-    }
-}
 
 const submitMcq = async(req, res) => {
     try{
@@ -150,7 +108,14 @@ const submitMcq = async(req, res) => {
         if(mcqSubmission) await mcqSubmission.save();
         else return res.status(500).json({message: "Could not create MCQ submission"}); 
         if(mcqSubmission.isCorrect){
-            await TeamScore.findByIdAndUpdate({team: registration.team, assessment: mcq.assessment}, {
+            const previousSubmissions = await McqSubmission.findOne({
+                user: user._id,
+                mcq: mcq._id,
+                isCorrect: true,
+                _id: { $ne: mcqSubmission._id } // Exclude current submission
+            });
+
+            if(!previousSubmissions) await TeamScore.findByIdAndUpdate({team: registration.team, assessment: mcq.assessment}, {
                 $inc: {score: 1}
             });
         }
@@ -164,7 +129,7 @@ const submitMcq = async(req, res) => {
 const getOAssessments = async(req, res) => {
     try{
         const user = req.user;
-        const {assessmentId} = req.body;
+        const {assessmentId} = req.params;
         if(!assessmentId) return res.status(400).json({message: "Assessment ID is required"});
         const registration = await Registration.findOne({assessment: assessmentId, user: user._id});
         if(!registration) return res.status(403).json({message: "You are not registered for this assessment"});
@@ -203,5 +168,4 @@ module.exports = {
     submitMcq,
     getOAssessments,
     getSubmissions,
-    getSelectedTeams
 };

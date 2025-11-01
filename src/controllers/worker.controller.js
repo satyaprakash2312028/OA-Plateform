@@ -11,7 +11,7 @@ const getJudgeVedict = async(req, res) => {
             memoryUsed
         });
         if(!submission) return res.status(404).json({message: "Submission not found"});
-        const userSocketId = getReceiverSocketId(userId);
+        const userSocketId = getReceiverSocketId(submission.user);
         if(userSocketId){
             io.to(userSocketId).emit("statusUpdate", {submissionId, status});
         }
