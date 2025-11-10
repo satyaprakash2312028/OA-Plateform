@@ -8,6 +8,7 @@ const { connectQueue } = require('./src/lib/queue.js');
 const { router: authRoutes } = require('./src/routes/auth.routes.js');
 const { router: problemRoutes } = require('./src/routes/problem.routes.js');
 const { router: internalRoutes } = require('./src/routes/internal.routes.js');
+const { router: adminRoutes } = require('./src/routes/admin.routes.js');
 // ... create and import other routes (registration, etc.)
 dotenv.config();
 const PORT = process.env.PORT;
@@ -15,16 +16,14 @@ app.use(express.json({limit: "50mb"}))
 app.use(express.urlencoded({extended: true, limit: "50mb"}));
 app.use(cookieParser());
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "http://localhost:3000",
     credentials: true
 }));
 // --- ADD THESE LINES ---
 app.use("/api/auth", authRoutes);
 app.use("/api/problem", problemRoutes);
 app.use("/internal", internalRoutes);
-app.get('/', (req, res) => {
-  res.send('Here.... from the App Backend from Satya...');
-});
+app.use("/admin", adminRoutes);
 server.listen(PORT, () => {
   console.log(`Backend server listening on ${PORT} port...`);
   connectDB();

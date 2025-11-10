@@ -1,4 +1,6 @@
 const { Schema, model } = require("mongoose");
+const { boolean } = require("zod");
+const { required } = require("zod/mini");
 const userSchema = new Schema(
     {
         email: {
@@ -14,6 +16,10 @@ const userSchema = new Schema(
             type: String,
             required: true,
             minlength: 6
+        },
+        isAdmin: {
+            type: Boolean,
+            default: false
         },
         isVerified: {
             type: Boolean,

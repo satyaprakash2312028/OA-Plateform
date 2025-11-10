@@ -49,20 +49,6 @@ const mcqSchema = new Schema({
     trim: true,
   },
 
-  // Optional: Difficulty level
-  difficulty: {
-    type: String,
-    enum: ['Easy', 'Medium', 'Hard'], // Example levels
-    trim: true,
-  },
-
-  // Optional: Topic or category for the question
-  topic: {
-    type: String,
-    trim: true,
-    index: true, // Index if you plan to query by topic frequently
-  },
-
   assessment: {
     type: Schema.Types.ObjectId,
     ref: "Assessment",

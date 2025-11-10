@@ -16,11 +16,12 @@ const register = async(req, res) => {
         if(!assessment) return res.status(400).json({ message: "Assessment ID is wrong." });
         let teamID;
         if(!existingTeamID){
-            const team = await Team.findOne({name: teamName});
+            const team = await Team.findOne({name: teamName, assessment:assessmentId});
             if(!team){
                 const newTeam = new Team({
                     name: teamName,
-                    leader: user._id
+                    leader: user._id,
+                    assessment: assessmentId
                 });
                 if(!newTeam) return res.status(500).json({message: "Not able to create the team. Try using different name."});
                 await newTeam.save();
@@ -29,8 +30,10 @@ const register = async(req, res) => {
                 return res.status(400).json({ message: "Team name already exists. Please choose a different name or join existing team." });
             }
         }else{
-            const team = await Team.findById(existingTeamID);
+            const team = await Team.findById({team:existingTeamID, assessment: assessmentId});
             if(!team) return res.status(400).json({ message: "Team ID is wrong." });
+            const memeberCount = await Registration.find({team:teamID, assessment: assessmentId});
+            if(memeberCount.length >= assessment.maxTeamSize) return res.status(400).json({message: "Max team size reached already"});
             teamID = team._id;
         }
         const newRegistration = new Registration({
@@ -39,7 +42,8 @@ const register = async(req, res) => {
             user: user._id,
             isPending: false
         });
-        await newRegistration.save();
+        if(newRegistration) await newRegistration.save();
+        else return res.status(400).json({ message: "Invalid Attempt..." });
         res.status(201).json(newRegistration.toJSON);
     }catch(error){
         console.log("Error in register controller.");

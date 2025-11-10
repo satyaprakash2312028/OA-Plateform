@@ -12,6 +12,11 @@ const teamSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  assessment:{
+    type: Schema.Types.ObjectId,
+    ref: 'Assessment',
+    required: true
   }
 }, { timestamps: true }); // Adds createdAt, updatedAt
 

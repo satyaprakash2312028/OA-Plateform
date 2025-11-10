@@ -6,13 +6,14 @@ const {Registration} = require("../models/registration.model.js");
 const { Assessment } = require("../models/assessment.model.js");
 const {TeamScore} = require("../models/teamScore.model.js");
 const {Team} = require("../models/team.model.js");
-const {sendSubmissionToQueue} = require("../lib/queueManager.js");
+const {sendSubmissionToQueue} = require("../lib/queue.js");
 
 
 const submitProblem = async(req, res) => {
     try{
         const user = req.user;
-        const {problemId, code, language, assessmentID} = req.body;
+        const {code, language, assessmentID} = req.body;
+        const {id: problemId} = req.params;
         if(code.trim().length<=0) res.status(400).json({message: "Code cannot be empty"});
         if(language.trim().length<=0) res.status(400).json({message: "Language cannot be empty"});
         if(language!="python" && language!="javascript" && language!="cpp"&& language!="java"){
@@ -21,7 +22,7 @@ const submitProblem = async(req, res) => {
         const problem = await Problem.findById(problemId);
         if(!problem) return res.status(404).json({message: "Problem not found"});
         if(assessmentID){
-            const assessment = await Problem.findById(assessmentID);
+            const assessment = await Assessment.findById(assessmentID);
             if(!assessment) return res.status(404).json({message: "Assessment not found"});
             if(!problem.isPrivate) return res.status(400).json({message: "Problem is not part of any assessment"});
             if(assessmentID!= problem.assessment.toString()){
@@ -103,7 +104,7 @@ const submitMcq = async(req, res) => {
             user: user._id,
             mcq: mcq._id,
             optionSelected,
-            isCorrect: mcq.correctOptionIndex===optionSelected
+            isCorrect: mcq.correctAnswerIndex===optionSelected
         });
         if(mcqSubmission) await mcqSubmission.save();
         else return res.status(500).json({message: "Could not create MCQ submission"}); 
@@ -115,7 +116,7 @@ const submitMcq = async(req, res) => {
                 _id: { $ne: mcqSubmission._id } // Exclude current submission
             });
 
-            if(!previousSubmissions) await TeamScore.findByIdAndUpdate({team: registration.team, assessment: mcq.assessment}, {
+            if(!previousSubmissions) await TeamScore.findOneAndUpdate({team: registration.team, assessment: mcq.assessment}, {
                 $inc: {score: 1}
             });
         }
@@ -126,6 +127,28 @@ const submitMcq = async(req, res) => {
     }
 }
 
+const getProblem = async () => {
+    try{
+        const {id:problemId} = req.params;
+        if(!problemId) res.status(400).json({message: "Problem Id isn't provided"});
+        const problem = Problem.findById(problemId);
+        if(!problem) res.status(400).json({message: "Problem isn't available"});
+        if(problem.isPrivate) res.status(400).json({message: "Problem isn't available for upsolving."});
+        req.status(200).json({
+            problemId,
+            name: problem.name,
+            timeLimit: problem.timeLimit,
+            memoryLimit: problem.memoryLimit,
+            htmlDescription: problem.htmlDescription,
+            interactive: interactor!=NULL,
+            assesment: problem.assesment
+        });
+    }catch(error){
+        console.log("Error in getProblem controller");
+        return res.status(500).json({message: "Error in problem controller"});
+    }
+}
+
 const getOAssessments = async(req, res) => {
     try{
         const user = req.user;
@@ -133,7 +156,7 @@ const getOAssessments = async(req, res) => {
         if(!assessmentId) return res.status(400).json({message: "Assessment ID is required"});
         const registration = await Registration.findOne({assessment: assessmentId, user: user._id});
         if(!registration) return res.status(403).json({message: "You are not registered for this assessment"});
-        if(Date.now()<registration.assessment.startTime) return res.status(403).json({message: "Assessment hasn't started yet"});
+        if(Date.now() < assessment.startTime) return res.status(403).json({message: "Assessment hasn't started yet"});
 
         const problems = await Problem.find({assessment: assessmentId});
         const mcqs = await Mcq.find({assessment: assessmentId});
@@ -168,4 +191,5 @@ module.exports = {
     submitMcq,
     getOAssessments,
     getSubmissions,
+    getProblem
 };

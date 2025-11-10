@@ -15,4 +15,18 @@ const generateToken = (userId, res) => {
     return token;
 };
 
-module.exports = {generateToken};
+const generateAdminToken = (userId, res) => {
+    const token = jwt.sign({userId}, process.env.JWT_SECRET, {
+        expiresIn: "7d"
+    });
+        res.cookie("jwt_admin", token, {
+            maxAge: 24*60*60*2,
+            httpOnly: true,
+            sameSite: "none",
+            secure: true,
+            path: "/"
+        });
+    return token;
+}
+
+module.exports = {generateToken, generateAdminToken};

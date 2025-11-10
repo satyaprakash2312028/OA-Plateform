@@ -2,6 +2,7 @@ const {Submission} = require("../models/submission.model.js");
 const {TeamScore} = require("../models/teamScore.model.js");
 const {Registration} = require("../models/registration.model.js");
 const {io, getReceiverSocketId}  = require('../lib/socket.js');
+
 const getJudgeVedict = async(req, res) => {
     try{
         const {submissionId, verdict, executionTime, memoryUsed, status} = req.body;
@@ -13,7 +14,7 @@ const getJudgeVedict = async(req, res) => {
         if(!submission) return res.status(404).json({message: "Submission not found"});
         const userSocketId = getReceiverSocketId(submission.user);
         if(userSocketId){
-            io.to(userSocketId).emit("statusUpdate", {submissionId, status});
+            io.to(userSocketId).emit("statusUpdate", {submissionId, verdict});
         }
         // Update team score if submission is accepted and linked to an assessment
         if(submission.assesment&&(verdict==="Accepted")){

@@ -7,6 +7,9 @@ const { Assessment } = require("../models/assessment.model.js");
 const {TeamScore} = require("../models/teamScore.model.js");
 const {Team} = require("../models/team.model.js");
 const {sendSubmissionToQueue} = require("../lib/queueManager.js");
+const {generateAdminToken} = require("../lib/utils.js");
+const { User } = require("../models/user.model.js");
+const { Test } = require("../models/test.model.js");
 
 const rejudge = async(req, res) =>{
     try{
@@ -29,8 +32,8 @@ const login = async (req, res) => {
         const { email, password } = req.body;
         if (!email || !password) return res.status(400).json({ messsage: "All fields are required for login" });
         if (password.length < 6) return res.status(400).json({ messsage: "Password length must be greater than 5" });
-        const user = await User.find({ email });
-        if (!user || user._id!=process.env.ADMIN_ID || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ messsage: "Invalid login credentials" });
+        const user = await User.findOne({ email });
+        if (!user || !user.isAdmin || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ messsage: "Invalid login credentials" });
         generateAdminToken(user._id, res);
         res.status(201).json({message : "Admin logged in sucessfully"});
     }catch(error){
@@ -39,11 +42,28 @@ const login = async (req, res) => {
     }
 }
 
+const logout = async(req, res) => {
+    try {
+        res.cookie("jwt_admin", "", {
+            maxAge: 0,
+            path: '/',        // <-- Add this
+            secure: true,     // <-- Add this
+            sameSite: 'None', // <-- Add this
+            httpOnly: true    // <-- Good practice to include this too
+        });
+        res.status(200).json({ message: "Logged Out Successfully" });
+    } catch (error) {
+        console.log("Error in logout controller ", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
 const uploadProblem = async(req, res) =>{ 
     try{
-        const { name, timeLimit, memoryLimit, htmlDescription, isPrivate, interactor, checker, assessment, zipfile } = req.body;
+        const { name, timeLimit, memoryLimit, htmlDescription, isPrivate, interactor, checker, assessment, zipFilePath, problemId } = req.body;
         // check with zod
         const newProblem = new Problem({
+            problemId,
             name,
             timeLimit,
             memoryLimit,
@@ -55,10 +75,10 @@ const uploadProblem = async(req, res) =>{
         });
         if(newProblem) await newProblem.save();
         else return res.status(400).json({message: "Problem Creation failed."});
-        // todo: Add actual upload of zipfile
+        // todo: actual upload of zipfile to be handeled by frontEnd
         const newTest = new Test({
             problem: newProblem._id,
-            path: "sasasas"
+            path: zipFilePath
         });
         if(newTest) await newTest.save();
         else res.status(400).json({message: "Test upload failed"});
@@ -70,3 +90,51 @@ const uploadProblem = async(req, res) =>{
 
 }
 
+const startOA = async(req, res) =>{
+    const {startTime, endTime, description, title, maxTeamSize} = req.body;
+    // check with zod
+    const newAssessment = new Assessment({
+        startTime,
+        endTime,
+        description,
+        title,
+        maxTeamSize
+    });
+    if(newAssessment)  await newAssessment.save();
+    else return res.status(400).json({message:"Online Assessment creation failed, try again.."});
+    res.status(201).json({message:"Refresh page to see the changes"});
+}
+
+const uploadMcq = async(req, res)=>{
+    const {question, options, correctAnswerIndex, explanation, assessment} = req.body;
+    // check with zod
+    const newMcq = new Mcq({
+        question,
+        options,
+        explanation,
+        assessment,
+        correctAnswerIndex
+    });
+    if(newMcq) await newMcq.save();
+    else return res.status(400).json({message:"Mcq creation failed, try again.."});
+    res.status(201).json({message:"Refresh page to see the changes"});
+}
+
+const makeAdmin = async(req, res) => {
+    try{
+
+    }catch(error){
+        console.log("Error in admin controller while adding admin...");
+        return res.status(500).json({message: "Internal Server Error"});
+    }
+}
+
+module.exports = {
+    uploadMcq,
+    uploadProblem,
+    startOA,
+    rejudge,
+    login,
+    logout,
+    makeAdmin
+}

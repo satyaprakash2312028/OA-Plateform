@@ -30,16 +30,7 @@ const assessmentSchema = new Schema({
     index: true,
   },
   // Specific duration in minutes allowed per participant after they start
-  durationMinutes: {
-    type: Number,
-    min: [30, 'Duration must be at least 1 minute'],
-    required: [true, 'Duration is required'],
-    validate: {
-        validator: function(value){
-            return value <= (this.endTime - this.startTime); 
-        }
-    }
-  },
+  
   maxTeamSize: {
     type: Number,
     min: 1,
@@ -54,7 +45,7 @@ const assessmentSchema = new Schema({
 
 }, { timestamps: true });
 
-assessmentSchema.index({ status: 1, startTime: 1 });
+assessmentSchema.index({ startTime: 1 });
 
 const Assessment = model('Assessment', assessmentSchema);
 
