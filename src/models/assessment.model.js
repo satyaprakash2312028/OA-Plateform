@@ -44,9 +44,6 @@ const assessmentSchema = new Schema({
   }
 
 }, { timestamps: true });
-
-assessmentSchema.index({ startTime: 1 });
-
 const Assessment = model('Assessment', assessmentSchema);
 
 module.exports = {Assessment}; // Or { Assessment }

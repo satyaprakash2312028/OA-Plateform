@@ -4,7 +4,7 @@ const {User} =  require("../models/user.model.js");
 dotenv.config();
 const protectAdminRoute = async (req, res, next) => {
     try {
-        const token = req.cookies.jwt;
+        const token = req.cookies.jwt_admin;
         if(!token) return res.status(401).json({message: "Unauthorized Access - No token provided"});
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if(!decoded) return res.status(401).json({message: "Unauthorized Access - Invalid Token"});

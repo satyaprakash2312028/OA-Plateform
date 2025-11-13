@@ -6,10 +6,11 @@ const {Registration} = require("../models/registration.model.js");
 const { Assessment } = require("../models/assessment.model.js");
 const {TeamScore} = require("../models/teamScore.model.js");
 const {Team} = require("../models/team.model.js");
-const {sendSubmissionToQueue} = require("../lib/queueManager.js");
+const {sendSubmissionToQueue} = require("../lib/queue.js");
 const {generateAdminToken} = require("../lib/utils.js");
 const { User } = require("../models/user.model.js");
 const { Test } = require("../models/test.model.js");
+const bcrypt = require("bcryptjs");
 
 const rejudge = async(req, res) =>{
     try{
@@ -34,8 +35,22 @@ const login = async (req, res) => {
         if (password.length < 6) return res.status(400).json({ messsage: "Password length must be greater than 5" });
         const user = await User.findOne({ email });
         if (!user || !user.isAdmin || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ messsage: "Invalid login credentials" });
+        res.cookie("jwt", "", {
+            maxAge: 0,
+            path: '/',        // <-- Add this
+            secure: true,     // <-- Add this
+            sameSite: 'None', // <-- Add this
+            httpOnly: true    // <-- Good practice to include this too
+        });
         generateAdminToken(user._id, res);
-        res.status(201).json({message : "Admin logged in sucessfully"});
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            email,
+            profilePic: user.profilePic,
+            isVerified: user.isVerified,
+            isAdmin: user.isAdmin
+        });
     }catch(error){
         console.log("Error in login controller ", error);
         return res.status(500).json({ message: "Internal Server Error" });
@@ -84,7 +99,7 @@ const uploadProblem = async(req, res) =>{
         else res.status(400).json({message: "Test upload failed"});
         res.status(201).json({message: "Problem uploaded sucessfully"});
     }catch(error){
-        console.log("Error while uploading problem");
+        console.log("[admin.controller.js] Error while uploading problem", error);
         return res.status(500).json({message: "Internal Server Error"});
     }
 
@@ -122,10 +137,18 @@ const uploadMcq = async(req, res)=>{
 
 const makeAdmin = async(req, res) => {
     try{
-
+        const user = req.user;
+        const {email} = req.body;
+        if(!email) return res.status(400).json({message:"Email isn't provided"});
+        if(email==user.email) return res.status(200).json({message:"You are already an admin."});
+        const updatedUser = await User.findOneAndUpdate({email}, {
+            isAdmin: true
+        });
+        if(!updatedUser) return res.status(400).json({message:"User not found"});
+        res.status(200).json({message:`${updatedUser.fullName} is an Admin now`});
     }catch(error){
         console.log("Error in admin controller while adding admin...");
-        return res.status(500).json({message: "Internal Server Error"});
+        return res.status(500).json({message: "Internal Server Error...."});
     }
 }
 

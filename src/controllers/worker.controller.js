@@ -6,6 +6,7 @@ const {io, getReceiverSocketId}  = require('../lib/socket.js');
 const getJudgeVedict = async(req, res) => {
     try{
         const {submissionId, verdict, executionTime, memoryUsed, status} = req.body;
+        console.log(verdict);
         const submission = await Submission.findByIdAndUpdate(submissionId, {
             status: verdict,
             executionTime,

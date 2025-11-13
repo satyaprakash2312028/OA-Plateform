@@ -1,6 +1,7 @@
 // src/routes/internal.routes.js
+console.log("--- INTERNAL.ROUTES.JS [v2] IS LOADING ---");
 const express = require("express");
-const { internalRouteChecks } = require("../middleware/auth.middleware.js");
+const { internalRouteChecks } = require("../middleware/internal.middleware.js");
 const { getJudgeVedict, getStatus } = require("../controllers/worker.controller.js");
 
 const router = express.Router();

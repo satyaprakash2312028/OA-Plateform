@@ -20,6 +20,7 @@ const submitProblem = async(req, res) => {
             return res.status(400).json({message: "Unsupported language"});
         }
         const problem = await Problem.findById(problemId);
+        console.log(problemId);
         if(!problem) return res.status(404).json({message: "Problem not found"});
         if(assessmentID){
             const assessment = await Assessment.findById(assessmentID);
@@ -131,7 +132,7 @@ const getProblem = async () => {
     try{
         const {id:problemId} = req.params;
         if(!problemId) res.status(400).json({message: "Problem Id isn't provided"});
-        const problem = Problem.findById(problemId);
+        const problem = await Problem.findById(problemId);
         if(!problem) res.status(400).json({message: "Problem isn't available"});
         if(problem.isPrivate) res.status(400).json({message: "Problem isn't available for upsolving."});
         req.status(200).json({

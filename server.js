@@ -1,3 +1,4 @@
+console.log("--- SERVER.JS [v2] IS LOADING ---");
 const express = require('express');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
@@ -23,8 +24,8 @@ app.use(cors({
 app.use("/api/auth", authRoutes);
 app.use("/api/problem", problemRoutes);
 app.use("/internal", internalRoutes);
-app.use("/admin", adminRoutes);
-server.listen(PORT, () => {
+app.use("/api/admin", adminRoutes);
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Backend server listening on ${PORT} port...`);
   connectDB();
   connectQueue();
