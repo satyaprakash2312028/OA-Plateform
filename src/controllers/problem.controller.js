@@ -128,7 +128,7 @@ const submitMcq = async(req, res) => {
     }
 }
 
-const getProblem = async () => {
+const getProblem = async (req, res) => {
     try{
         const {id:problemId} = req.params;
         if(!problemId) res.status(400).json({message: "Problem Id isn't provided"});
@@ -146,7 +146,26 @@ const getProblem = async () => {
         });
     }catch(error){
         console.log("Error in getProblem controller");
-        return res.status(500).json({message: "Error in problem controller"});
+        return res.status(500).json({message: "Internal Server Error"});
+    }
+}
+
+const getAllProblems = async(req, res) => {
+    try{
+        const user = req.user;
+        let problems = null;
+        if(user.isAdmin){
+            problems = await Problem.find({});
+        }else{
+            problems = await Problem.find({
+                isPrivate: false
+            });
+        }
+        if(!problems) throw new Error("Internal Server Error");
+        res.status(200).json({problems: problems});
+    }catch(error){
+        console.log("Error in problem controller", error);
+        res.status(500).json({message: "Internal Server Error"});
     }
 }
 
@@ -192,5 +211,6 @@ module.exports = {
     submitMcq,
     getOAssessments,
     getSubmissions,
-    getProblem
+    getProblem,
+    getAllProblems
 };

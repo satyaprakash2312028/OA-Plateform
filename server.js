@@ -10,6 +10,7 @@ const { router: authRoutes } = require('./src/routes/auth.routes.js');
 const { router: problemRoutes } = require('./src/routes/problem.routes.js');
 const { router: internalRoutes } = require('./src/routes/internal.routes.js');
 const { router: adminRoutes } = require('./src/routes/admin.routes.js');
+const { router: dashboardRoutes } = require('./src/routes/dashboard.routes.js');
 // ... create and import other routes (registration, etc.)
 dotenv.config();
 const PORT = process.env.PORT;
@@ -25,7 +26,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/problem", problemRoutes);
 app.use("/internal", internalRoutes);
 app.use("/api/admin", adminRoutes);
-server.listen(PORT, '0.0.0.0', () => {
+app.use("/api/dashboard", dashboardRoutes);
+server.listen(PORT, () => {
   console.log(`Backend server listening on ${PORT} port...`);
   connectDB();
   connectQueue();

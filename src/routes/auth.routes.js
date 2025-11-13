@@ -8,4 +8,4 @@ router.post("/logout", logout);
 router.put("/update-profile", protectRoute, requiresVerified,  updateProfile);
 router.get("/check", protectRoute, checkAuth);
 router.get("/checkVerified", protectRoute, requiresVerified, checkVerified);
-module.exports =  {router};
+module.exports =  {router: router};
