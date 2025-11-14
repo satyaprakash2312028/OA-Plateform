@@ -81,5 +81,6 @@ const problemSolved = async(req, res)=>{
 
 module.exports = {
     upcomingOA,
-    allOATakenPartIn
+    allOATakenPartIn,
+    problemSolved
 }
