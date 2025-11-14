@@ -10,7 +10,7 @@ const signup = async (req, res) => {
             return res.status(400).json({ message: "Password is too short" });
         }
         const user = await User.findOne({ email });
-        if (user && user.isVerified) return res.status(400).json({ mesaage: "Email Already exists" });
+        if (user && user.isVerified) return res.status(400).json({ message: "Email Already exists" });
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         // if (user) {

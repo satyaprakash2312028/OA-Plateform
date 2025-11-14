@@ -204,7 +204,16 @@ const getSubmissions = async(req, res) => {
     }
 }
 
-
+const allProblems = async(req, res)=>{
+    try{
+        const problem = await Problem.find({}).select("name problemId");
+        if(!problem) return res.status(500).json({message:"Internal Server Error"});
+        res.status(200).json({problem});
+    }catch(error){
+        console.log("Error in allProblems controller ", error);
+        res.status(500).json({message:"Internal Server Error"});
+    }
+}
 
 module.exports = {
     submitProblem,
@@ -212,5 +221,6 @@ module.exports = {
     getOAssessments,
     getSubmissions,
     getProblem,
-    getAllProblems
+    getAllProblems,
+    allProblems
 };
