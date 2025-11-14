@@ -206,7 +206,7 @@ const getSubmissions = async(req, res) => {
 
 const allProblems = async(req, res)=>{
     try{
-        const problem = await Problem.find({}).select("name problemId");
+        const problem = await Problem.find({}).select("name problemId _id");
         if(!problem) return res.status(500).json({message:"Internal Server Error"});
         res.status(200).json({problem});
     }catch(error){
