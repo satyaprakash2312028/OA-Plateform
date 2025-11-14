@@ -42,40 +42,34 @@ const allOATakenPartIn = async(req, res)=>{
 
 const problemSolved = async(req, res)=>{
     try{
+        const user = req.user;
+        console.log("hi");
         const result = await Submission.aggregate([
-        // --- Stage 1: Filter ---
-        // Find all submissions by the specified user that have a status of "Accepted".
-        // This should use the compound index on {user, status}.
         {
             $match: {
-            user: userId,
-            status: 'Accepted'
+            user: user._id,           // the user's ObjectId
+            status: 'Accepted'      // only accepted submissions
             }
         },
-
-        // --- Stage 2: Group by Problem ---
-        // Group documents by the 'problem' field to find unique problems.
-        // We don't need to sort first, and we only need the _id.
-        // This is very lightweight.
         {
             $group: {
-            _id: "$problem" // Group by the problem ID
+            _id: '$problem'         // group by unique problem
             }
         },
-
-        // --- Stage 3: Count ---
-        // Count the number of unique groups (which equals the number of unique problems).
         {
-            $count: "uniqueAcceptedCount" // The output field name
+            $count: 'totalSolved'     // count unique problems
         }
         ]);
-        if(!result||!result[0]){
-            return res.status(500).json({message:"Internal Server Error"});
+        console.log("bye");
+        console.log(result);
+        if(!result){
+            return res.status(500).json({message:"Internal Server Error..."});
         }
-        res.status(200).json({problemSolved:result[0].lenght});
+        if(result[0]) res.status(200).json({problemSolved:result[0].totalSolved});
+        else res.status(200).json({problemSolved:0});
     }catch(erorr){
         console.log("Error in problem solved controller");
-        res.status(500).json({message:"Internal Server Error"});
+        res.status(500).json({message:"Internal Server Error....."});
     }
 }
 
